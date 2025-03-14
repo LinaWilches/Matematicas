@@ -1,6 +1,16 @@
 import pygame
 import math
 
+# Initialize Pygame
+pygame.init()
+
+# Colors
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+BLUE = (0, 0, 255)
+GRAY = (200, 200, 200)
+LIGHT_GRAY = (220, 220, 220)  # For hover effect
+
 def calcular_angulos(a, b, c):
     """Calcula los ángulos de un triángulo usando la ley del coseno."""
     ang_a = math.degrees(math.acos((b**2 + c**2 - a**2) / (2 * b * c)))
@@ -30,28 +40,38 @@ def dibujar_triangulo(pantalla, a, b, c):
     """Dibuja un triángulo en la pantalla de Pygame."""
     # Calcular coordenadas de los vértices (simplificado)
     vertices = [(250, 100), (100, 300), (400, 300)]  # Ejemplo, ajustar según sea necesario
-
-    pygame.draw.polygon(pantalla, (0, 0, 255), vertices, 2)
+    pygame.draw.polygon(pantalla, BLUE, vertices, 2)
 
 def mostrar_info(pantalla, lados, angulos, tipo_lados, tipo_angulos):
     """Muestra la información del triángulo en la pantalla."""
     fuente = pygame.font.Font(None, 24)
-    texto_lados = fuente.render(f"Lados: {lados}", True, (0, 0, 0))
-    texto_angulos = fuente.render(f"Ángulos: {angulos}", True, (0, 0, 0))
-    texto_tipo_lados = fuente.render(f"Tipo (lados): {tipo_lados}", True, (0, 0, 0))
-    texto_tipo_angulos = fuente.render(f"Tipo (ángulos): {tipo_angulos}", True, (0, 0, 0))
+    texto_lados = fuente.render(f"Lados: {lados}", True, BLACK)
+    
+    # Formatear los ángulos a un decimal
+    ang_a_str = "{:.1f}".format(angulos[0])
+    ang_b_str = "{:.1f}".format(angulos[1])
+    ang_c_str = "{:.1f}".format(angulos[2])
+    texto_angulos = fuente.render(f"Ángulos: ({ang_a_str}, {ang_b_str}, {ang_c_str})", True, BLACK)
+    
+    texto_tipo_lados = fuente.render(f"Tipo de lado: {tipo_lados}", True, BLACK)
+    texto_tipo_angulos = fuente.render(f"Tipo de ángulo: {tipo_angulos}", True, BLACK)
 
     pantalla.blit(texto_lados, (10, 10))
     pantalla.blit(texto_angulos, (10, 30))
     pantalla.blit(texto_tipo_lados, (10, 50))
     pantalla.blit(texto_tipo_angulos, (10, 70))
 
-def mostrar_menu(pantalla):
+def mostrar_menu(pantalla, rect_inicio, mouse_over_start):
     """Muestra el menú principal."""
     fuente = pygame.font.Font(None, 36)
-    texto_inicio = fuente.render("Iniciar", True, (0, 0, 0))
-    rect_inicio = texto_inicio.get_rect(center=(250, 200))
-    pygame.draw.rect(pantalla, (200, 200, 200), rect_inicio.inflate(20, 10))
+    texto_inicio = fuente.render("Iniciar", True, BLACK)
+    
+    #change color if the mouse is over
+    if mouse_over_start:
+        pygame.draw.rect(pantalla, LIGHT_GRAY, rect_inicio.inflate(20, 10))
+    else:
+        pygame.draw.rect(pantalla, GRAY, rect_inicio.inflate(20, 10))
+    
     pantalla.blit(texto_inicio, rect_inicio)
     return rect_inicio
 
@@ -62,6 +82,8 @@ def ingresar_lados(pantalla):
     input_rects = [pygame.Rect(200, 100 + i * 40, 100, 30) for i in range(3)]
     active_input = 0
     done = False
+    cursor_visible = True
+    cursor_counter = 0
     while not done:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
@@ -77,14 +99,28 @@ def ingresar_lados(pantalla):
                     input_lados[active_input] = input_lados[active_input][:-1]
                 else:
                     input_lados[active_input] += evento.unicode
+                #reset the cursor
+                cursor_visible = True
+                cursor_counter = 0
 
-        pantalla.fill((255, 255, 255))
+        pantalla.fill(WHITE)
         for i, rect in enumerate(input_rects):
-            pygame.draw.rect(pantalla, (200, 200, 200), rect, 2)
-            text_surf = fuente.render(input_lados[i], True, (0, 0, 0))
+            pygame.draw.rect(pantalla, GRAY, rect, 2)
+            text_surf = fuente.render(input_lados[i], True, BLACK)
             pantalla.blit(text_surf, (rect.x + 5, rect.y + 5))
-            label_surf = fuente.render(f"Lado {chr(97 + i)}:", True, (0,0,0))
+            label_surf = fuente.render(f"Lado {chr(97 + i)}:", True, BLACK)
             pantalla.blit(label_surf, (100, 100 + i*40))
+
+            # Cursor logic
+            if active_input == i:
+              cursor_counter += 1
+              if cursor_counter % 30 == 0:
+                cursor_visible = not cursor_visible
+              if cursor_visible:
+                cursor_x = rect.x + 5 + text_surf.get_width()
+                cursor_y = rect.y + 5
+                pygame.draw.line(pantalla, BLACK, (cursor_x, cursor_y), (cursor_x, cursor_y + text_surf.get_height()), 2)
+
         pygame.display.flip()
     try:
         a = float(input_lados[0])
@@ -96,17 +132,20 @@ def ingresar_lados(pantalla):
 
 def main():
     """Función principal para ejecutar el programa."""
-    pygame.init()
     pantalla = pygame.display.set_mode((500, 400))
     pygame.display.set_caption("Caracterización de Triángulo")
-
+    clock = pygame.time.Clock()
     menu_activo = True
     lados = None
 
+    fuente = pygame.font.Font(None, 36)
+    texto_inicio = fuente.render("Iniciar", True, BLACK)
+    rect_inicio = texto_inicio.get_rect(center=(250, 200))
     while True:
-        pantalla.fill((255, 255, 255))
+        mouse_over_start = rect_inicio.collidepoint(pygame.mouse.get_pos())
+        pantalla.fill(WHITE)
         if menu_activo:
-            rect_inicio = mostrar_menu(pantalla)
+            mostrar_menu(pantalla, rect_inicio, mouse_over_start)
             pygame.display.flip()
             for evento in pygame.event.get():
                 if evento.type == pygame.QUIT:
@@ -138,6 +177,7 @@ def main():
                         return
                     if evento.type == pygame.MOUSEBUTTONDOWN :
                         menu_activo = True
+        clock.tick(30)
 
 if __name__ == "__main__":
     main()
