@@ -9,7 +9,13 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 BLUE = (0, 0, 255)
 GRAY = (200, 200, 200)
-LIGHT_GRAY = (220, 220, 220)  # For hover effect
+PALE_TURQUOSIE = (115, 198, 182)  # For hover effect
+GREEN = (0, 255, 0)
+RED = (255,0,0)
+
+# Constants
+SCREEN_WIDTH = 500
+SCREEN_HEIGHT = 400
 
 def calcular_angulos(a, b, c):
     """Calcula los ángulos de un triángulo usando la ley del coseno."""
@@ -46,13 +52,13 @@ def mostrar_info(pantalla, lados, angulos, tipo_lados, tipo_angulos):
     """Muestra la información del triángulo en la pantalla."""
     fuente = pygame.font.Font(None, 24)
     texto_lados = fuente.render(f"Lados: {lados}", True, BLACK)
-    
+
     # Formatear los ángulos a un decimal
     ang_a_str = "{:.1f}".format(angulos[0])
     ang_b_str = "{:.1f}".format(angulos[1])
     ang_c_str = "{:.1f}".format(angulos[2])
     texto_angulos = fuente.render(f"Ángulos: ({ang_a_str}, {ang_b_str}, {ang_c_str})", True, BLACK)
-    
+
     texto_tipo_lados = fuente.render(f"Tipo de lado: {tipo_lados}", True, BLACK)
     texto_tipo_angulos = fuente.render(f"Tipo de ángulo: {tipo_angulos}", True, BLACK)
 
@@ -65,13 +71,16 @@ def mostrar_menu(pantalla, rect_inicio, mouse_over_start):
     """Muestra el menú principal."""
     fuente = pygame.font.Font(None, 36)
     texto_inicio = fuente.render("Iniciar", True, BLACK)
-    
-    #change color if the mouse is over
+    titulo = fuente.render("Calculadora de Triángulos", True, BLACK)
+    titulo_rect = titulo.get_rect(center=(SCREEN_WIDTH // 2, 100))
+    pantalla.blit(titulo, titulo_rect)
+
+    # change color if the mouse is over
     if mouse_over_start:
-        pygame.draw.rect(pantalla, LIGHT_GRAY, rect_inicio.inflate(20, 10))
+        pygame.draw.rect(pantalla, PALE_TURQUOSIE, rect_inicio.inflate(20, 10))
     else:
         pygame.draw.rect(pantalla, GRAY, rect_inicio.inflate(20, 10))
-    
+
     pantalla.blit(texto_inicio, rect_inicio)
     return rect_inicio
 
@@ -84,7 +93,14 @@ def ingresar_lados(pantalla):
     done = False
     cursor_visible = True
     cursor_counter = 0
+    calcular_button_rect = pygame.Rect(200, 250, 100, 30)
+    back_button_rect = pygame.Rect(10, 10, 80, 30)  # Back button
+    mouse_over_calcular = False
+    mouse_over_back = False
     while not done:
+        mouse_over_calcular = calcular_button_rect.collidepoint(pygame.mouse.get_pos())
+        mouse_over_back = back_button_rect.collidepoint(pygame.mouse.get_pos())
+
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 return None, None, None
@@ -92,14 +108,16 @@ def ingresar_lados(pantalla):
                 for i, rect in enumerate(input_rects):
                     if rect.collidepoint(evento.pos):
                         active_input = i
-            if evento.type == pygame.KEYDOWN:
-                if evento.key == pygame.K_RETURN:
+                if calcular_button_rect.collidepoint(evento.pos) and all(input_lados):
                     done = True
-                elif evento.key == pygame.K_BACKSPACE:
+                if back_button_rect.collidepoint(evento.pos):
+                    return None, None, None
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_BACKSPACE:
                     input_lados[active_input] = input_lados[active_input][:-1]
-                else:
+                elif evento.key != pygame.K_RETURN:
                     input_lados[active_input] += evento.unicode
-                #reset the cursor
+                # reset the cursor
                 cursor_visible = True
                 cursor_counter = 0
 
@@ -109,17 +127,36 @@ def ingresar_lados(pantalla):
             text_surf = fuente.render(input_lados[i], True, BLACK)
             pantalla.blit(text_surf, (rect.x + 5, rect.y + 5))
             label_surf = fuente.render(f"Lado {chr(97 + i)}:", True, BLACK)
-            pantalla.blit(label_surf, (100, 100 + i*40))
+            pantalla.blit(label_surf, (100, 100 + i * 40))
 
-            # Cursor logic
+            # Cursor logic (slower blinking)
             if active_input == i:
-              cursor_counter += 1
-              if cursor_counter % 30 == 0:
-                cursor_visible = not cursor_visible
-              if cursor_visible:
-                cursor_x = rect.x + 5 + text_surf.get_width()
-                cursor_y = rect.y + 5
-                pygame.draw.line(pantalla, BLACK, (cursor_x, cursor_y), (cursor_x, cursor_y + text_surf.get_height()), 2)
+                cursor_counter += 1
+                if cursor_counter % 150 == 0:  # Change this number to control the blink speed (60 = slower)
+                    cursor_visible = not cursor_visible
+                if cursor_visible:
+                    cursor_x = rect.x + 5 + text_surf.get_width()
+                    cursor_y = rect.y + 5
+                    pygame.draw.line(pantalla, BLACK, (cursor_x, cursor_y), (cursor_x, cursor_y + text_surf.get_height()), 2)
+
+        # Calculate Button
+        if mouse_over_calcular:
+            pygame.draw.rect(pantalla, PALE_TURQUOSIE, calcular_button_rect)
+        else:
+            pygame.draw.rect(pantalla, GREEN, calcular_button_rect)
+        calcular_text = fuente.render("Calcular", True, BLACK)
+        calcular_text_rect = calcular_text.get_rect(center=calcular_button_rect.center)
+        pantalla.blit(calcular_text, calcular_text_rect)
+
+        # Back Button
+        if mouse_over_back:
+            pygame.draw.rect(pantalla, PALE_TURQUOSIE, back_button_rect)
+        else:
+            pygame.draw.rect(pantalla, RED, back_button_rect)
+        back_text = fuente.render("Volver", True, BLACK)
+        back_text_rect = back_text.get_rect(center=back_button_rect.center)
+        pantalla.blit(back_text, back_text_rect)
+
 
         pygame.display.flip()
     try:
@@ -132,7 +169,7 @@ def ingresar_lados(pantalla):
 
 def main():
     """Función principal para ejecutar el programa."""
-    pantalla = pygame.display.set_mode((500, 400))
+    pantalla = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Caracterización de Triángulo")
     clock = pygame.time.Clock()
     menu_activo = True
@@ -140,7 +177,7 @@ def main():
 
     fuente = pygame.font.Font(None, 36)
     texto_inicio = fuente.render("Iniciar", True, BLACK)
-    rect_inicio = texto_inicio.get_rect(center=(250, 200))
+    rect_inicio = texto_inicio.get_rect(center=(SCREEN_WIDTH // 2, 200))
     while True:
         mouse_over_start = rect_inicio.collidepoint(pygame.mouse.get_pos())
         pantalla.fill(WHITE)
@@ -157,7 +194,7 @@ def main():
                     if not all(lados):
                         menu_activo = True
                     else:
-                        a,b,c = lados
+                        a, b, c = lados
                         if a <= 0 or b <= 0 or c <= 0 or a + b <= c or a + c <= b or b + c <= a:
                             menu_activo = True
         else:
