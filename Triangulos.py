@@ -42,12 +42,17 @@ def clasificar_triangulo_angulos(ang_a, ang_b, ang_c):
     else:
         return "Acutángulo"
 
-def dibujar_triangulo(pantalla, a, b, c):
+def dibujar_triangulo(pantalla, a, b, c, pInit = (250,100)):
     """Dibuja un triángulo en la pantalla de Pygame."""
     # Calcular coordenadas de los vértices (simplificado)
-    vertices = [(250, 100), (100, 300), (400, 300)]  # Ejemplo, ajustar según sea necesario
+    x0, y0 = pInit
+    ang_a , ang_b, ang_c = calcular_angulos(a,b,c)
+    x1 = x0 + c
+    y1 = y0
+    x2 = x0 + b * math.cos(ang_a)
+    y2 = y0 + b * math.sin(ang_a)
+    vertices = [((x2*1.2),(y2*1.2)), ((x1*1.2),(y1*1.2)), ((x0), (y0))]  
     pygame.draw.polygon(pantalla, BLUE_MAGENTA, vertices, 0)
-
 
 def mostrar_info(pantalla, lados, angulos, tipo_lados, tipo_angulos):
     """Muestra la información del triángulo en la pantalla."""
