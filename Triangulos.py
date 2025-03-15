@@ -1,5 +1,6 @@
 import pygame
 import math
+import random
 
 # Initialize Pygame
 pygame.init()
@@ -11,7 +12,8 @@ BLUE_GREY = (102, 153, 204)
 GRAY = (200, 200, 200)
 GRAY_2 = (213, 219, 219)
 DARK_MIDNIGHT_BLUE = (51, 102, 153)
-BLUE_MAGENTA = (0, 0, 102)
+MAGENTA = (207, 52, 118)
+colors=[BLACK, BLUE, BLUE_GREY, DARK_MIDNIGHT_BLUE, MAGENTA]
 
 # Constants
 SCREEN_WIDTH = 500
@@ -42,17 +44,45 @@ def clasificar_triangulo_angulos(ang_a, ang_b, ang_c):
     else:
         return "Acutángulo"
 
-def dibujar_triangulo(pantalla, a, b, c, pInit = (250,100)):
-    """Dibuja un triángulo en la pantalla de Pygame."""
-    # Calcular coordenadas de los vértices (simplificado)
-    x0, y0 = pInit
-    ang_a , ang_b, ang_c = calcular_angulos(a,b,c)
-    x1 = x0 + c
-    y1 = y0
-    x2 = x0 + b * math.cos(ang_a)
-    y2 = y0 + b * math.sin(ang_a)
-    vertices = [((x2*1.2),(y2*1.2)), ((x1*1.2),(y1*1.2)), ((x0), (y0))]  
-    pygame.draw.polygon(pantalla, BLUE_MAGENTA, vertices, 0)
+def dibujar_triangulo(pantalla, a, b, c, chColor):
+    ang_a, ang_b, ang_c = calcular_angulos(a, b, c)
+
+    # Normalizar las longitudes de los lados para graficar siempre en el mismo tamaño
+    lado_maximo = max(a, b, c)
+    a_normalizado = a / lado_maximo
+    b_normalizado = b / lado_maximo
+    c_normalizado = c / lado_maximo
+
+    # Variable para controlar el tamaño de la grafica
+    factor_escala = 200 
+
+    # Escalar a tamaño los lados normalizados sin calculos
+    a_escalado = a_normalizado * factor_escala
+    b_escalado = b_normalizado * factor_escala
+    c_escalado = c_normalizado * factor_escala
+
+    # Vértice A (centro de la pantalla)
+    A_x, A_y = 250, 200
+
+    # Vértice B (a distancia 'a' de A, hacia la izquierda)
+    B_x, B_y = A_x - a_escalado, A_y
+
+    # Vértice C (usando el ángulo B y el lado 'c')
+    C_x = B_x + c_escalado * math.cos(math.radians(ang_b))
+    C_y = B_y - c_escalado * math.sin(math.radians(ang_b))
+
+    vertices = [(A_x, A_y), (B_x, B_y), (C_x, C_y)]
+
+    # Centrar el triángulo :)
+    centroide_x = (A_x + B_x + C_x) / 3
+    centroide_y = (A_y + B_y + C_y) / 3
+    desplazamiento_x = 250 - centroide_x
+    desplazamiento_y = 200 - centroide_y
+
+    vertices_centrados = [
+        (x + desplazamiento_x, y + desplazamiento_y) for x, y in vertices
+    ]
+    pygame.draw.polygon(pantalla, chColor, vertices_centrados, 0)
 
 def mostrar_info(pantalla, lados, angulos, tipo_lados, tipo_angulos):
     """Muestra la información del triángulo en la pantalla."""
@@ -209,6 +239,7 @@ def ingresar_lados(pantalla):
 
 def main():
     """Función principal para ejecutar el programa."""
+    chColor = random.choice(colors)
     pantalla = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Caracterización de Triángulo")
     clock = pygame.time.Clock()
@@ -253,7 +284,7 @@ def main():
             ang_a, ang_b, ang_c = calcular_angulos(a, b, c)
             tipo_lados = clasificar_triangulo_lados(a, b, c)
             tipo_angulos = clasificar_triangulo_angulos(ang_a, ang_b, ang_c)
-            dibujar_triangulo(pantalla, a, b, c)
+            dibujar_triangulo(pantalla, a, b, c, chColor)
             mostrar_info(pantalla, (a, b, c), (ang_a, ang_b, ang_c), tipo_lados, tipo_angulos)
 
             # Draw "Volver" button
@@ -269,6 +300,7 @@ def main():
                     pygame.quit()
                     return
                 if evento.type == pygame.MOUSEBUTTONDOWN and rect_volver.collidepoint(evento.pos):
+                    chColor = random.choice(colors)
                     menu_activo = True
                     mostrar_resultados = False  # Reset for next calculation
         else:  # Handle invalid input or return to menu
